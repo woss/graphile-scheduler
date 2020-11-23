@@ -12,7 +12,7 @@ const defaults = {
     process.env.GRAPHILE_SCHEDULER_SCHEMA ?? "graphile_scheduler",
 };
 
-export function processOptions(options: RunnerOptions = {}) {
+export function processOptions(options: RunnerOptions = {}): any {
   return {
     ...defaults,
     ...options,

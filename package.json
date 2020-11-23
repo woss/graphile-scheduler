@@ -1,6 +1,6 @@
 {
-  "name": "@woss/graphile-scheduler",
-  "version": "0.8.1",
+  "name": "@woss-io/graphile-scheduler",
+  "version": "0.8.2",
   "description": "Job scheduler for PostgreSQL",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

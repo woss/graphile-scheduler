@@ -15,8 +15,11 @@ import {
 import upsertSchedule, { Schedule } from "./upsertSchedule";
 import { processOptions } from "./lib";
 
+interface GraphileSchedulerPayload extends Task {
+  fireDate?: Date;
+}
 export interface ScheduleConfig extends Schedule {
-  task?: Task;
+  task?: GraphileSchedulerPayload;
 }
 
 export interface RunnerOptions extends Omit<WorkerRunnerOptions, "schema"> {
@@ -60,9 +63,9 @@ export class Runner {
       ...workerOptions
     } = options;
     this.options = options;
-    this.checkInterval = checkInterval ?? 60 * 1000;
+    this.checkInterval = checkInterval ?? 60 * 1000; // default 1 minute in miliseconds
     this.leadTime = leadTime ?? 0;
-    this.maxAge = maxAge ?? 1000 * 60 * 60 * 24 * 3;
+    this.maxAge = maxAge ?? 1000 * 60 * 60 * 24 * 3; // 3 days in miliseconds
 
     this.logger = options.logger ?? new Logger(consoleLogFactory);
 
@@ -157,7 +160,7 @@ export class Runner {
     const checkDate = moment().add(this.checkInterval + this.leadTime, "ms");
     const startingAt = moment().subtract(this.maxAge, "ms");
 
-    this.logger.debug(`running check from ${startingAt} to ${checkDate}`);
+    this.logger.info(`running check from ${startingAt} to ${checkDate}`);
     try {
       let updated: string | null = null;
       do {
@@ -168,11 +171,12 @@ export class Runner {
         updated = res.rows[0].schedule_name;
 
         if (updated) {
-          this.logger.debug(`${updated} checked`);
+          this.logger.info(`${updated} checked`);
+          // this.workerRunner?.addJob(updated);
         }
       } while (updated != null);
     } finally {
-      await client.release();
+      client.release();
     }
   }
 
@@ -188,15 +192,15 @@ export class Runner {
 
   async run() {
     await this.runMigrations();
-
-    this.check();
-    this.interval = setInterval(async () => {
-      this.check();
-    }, this.checkInterval);
-
     if (this.shouldRunWorker) {
       this.workerRunner = await runWorker(this.workerOptions);
     }
+
+    this.check();
+
+    this.interval = setInterval(async () => {
+      this.check();
+    }, this.checkInterval);
   }
 
   async stop() {
